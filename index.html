@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Case Spinner — Инвентарь + Картинки</title>
+  <style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:Inter,system-ui,-apple-system,sans-serif}
+:root{--bg:#090909;--panel:#111;--panel2:#171717;--line:#303030;--muted:#888;--text:#f4f4f4;--white:#fff}
+body{min-height:100vh;background:var(--bg);color:var(--text);padding:22px 18px}
+.app{width:min(1260px,100%);margin:auto}
+.top-row{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:18px}
+.brand h1{font-size:30px;letter-spacing:-.8px;font-weight:800}.brand .sub{font-size:12px;color:#777;margin-top:5px}
+.profile-trigger{display:flex;align-items:center;gap:11px;background:#111;border:1px solid var(--line);padding:8px 16px 8px 9px;border-radius:12px;cursor:pointer;transition:.2s}.profile-trigger:hover{background:#181818;border-color:#555}
+.avatar,.modal-avatar{display:flex;align-items:center;justify-content:center;background:#fff;color:#000;border-radius:10px;font-weight:900}.avatar{width:42px;height:42px;font-size:19px}.modal-avatar{width:72px;height:72px;font-size:30px;margin:0 auto 14px}.profile-trigger .info{display:flex;flex-direction:column;line-height:1.3}.profile-trigger .name{font-size:14px;font-weight:700}.profile-trigger .balance-badge{font-size:12px;color:#999}.profile-trigger .balance-badge b{color:#fff}
+.layout{display:grid;grid-template-columns:210px minmax(0,1fr);gap:16px;align-items:start}.drops-panel{background:#111;border:1px solid var(--line);border-radius:12px;padding:14px;position:sticky;top:16px}.drops-title{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px}.drops-list{display:flex;flex-direction:column;gap:8px;max-height:610px;overflow:auto}.drop{display:flex;align-items:center;gap:9px;padding:9px;background:#171717;border:1px solid #252525;border-radius:9px;animation:dropIn .35s ease}.drop .drop-avatar{width:28px;height:28px;border-radius:7px;background:#fff;color:#000;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;flex:none}.drop .drop-info{min-width:0}.drop .drop-user{font-size:11px;color:#aaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.drop .drop-item{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.drop .drop-time{font-size:9px;color:#666;margin-top:2px}
+.cases{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}.case-btn{background:#111;border:1px solid var(--line);color:#aaa;padding:11px 22px;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;transition:.2s}.case-btn:hover{border-color:#666;color:#fff}.case-btn.active{background:#fff;color:#000;border-color:#fff}.case-btn .badge{margin-left:8px;background:#252525;color:#aaa;padding:2px 8px;border-radius:5px}.case-btn.active .badge{background:#000;color:#fff}
+.panel,.inventory-section{background:#111;border:1px solid var(--line);border-radius:12px;padding:18px}.roller-wrap{position:relative;overflow:hidden;border-radius:10px;background:#090909;border:1px solid #292929;height:190px}.roller-wrap:after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,#090909 0%,transparent 12%,transparent 88%,#090909 100%)}.marker{position:absolute;z-index:10;left:50%;top:0;bottom:0;width:2px;background:#fff;transform:translateX(-50%)}.marker:before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);border-left:9px solid transparent;border-right:9px solid transparent;border-top:12px solid #fff}.track{height:100%;display:flex;align-items:center;gap:12px;padding:0 12px;transform:translateX(0);will-change:transform;position:relative}.item{flex:0 0 150px;height:150px;border-radius:10px;border:1px solid #333;background:#151515;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:.2s;padding:6px;overflow:hidden}.item:hover{border-color:#777;background:#1c1c1c}.item img{width:64px;height:64px;object-fit:cover;border-radius:7px;background:#0b0b0b;border:1px solid #333;margin-bottom:5px}.item .placeholder{font-size:38px;font-weight:900;color:#777;line-height:1}.item b{font-size:14px;color:#eee;text-align:center}.item .rarity{font-size:10px;background:#252525;padding:3px 10px;border-radius:5px;margin-top:5px;color:#aaa}
+.controls{display:flex;justify-content:center;margin-top:18px}.spin{background:#fff;color:#000;border:1px solid #fff;padding:14px 44px;border-radius:10px;font-size:16px;font-weight:900;cursor:pointer;transition:.15s}.spin:hover:not(:disabled){background:#ddd;transform:translateY(-1px)}.spin:disabled{opacity:.35;cursor:not-allowed}.result{text-align:center;min-height:30px;font-size:17px;font-weight:700;margin-top:16px;color:#ddd}.chance{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin:12px 0 5px}.chance span{background:#171717;padding:6px 11px;border-radius:6px;border:1px solid #292929;color:#aaa;font-size:11px}.info-bar{display:flex;justify-content:space-between;margin-top:15px;color:#777;font-size:12px;gap:8px;flex-wrap:wrap}.info-bar .demo-cost{background:#171717;padding:5px 11px;border-radius:6px;border:1px solid #292929}
+.inventory-section{margin-top:14px}.inventory-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.inventory-header h3{font-size:16px}.inventory-grid{display:flex;flex-wrap:wrap;gap:9px;min-height:65px}.inv-item{background:#171717;border:1px solid #2b2b2b;border-radius:9px;padding:8px 11px;display:flex;align-items:center;gap:9px}.inv-item:hover{border-color:#666}.inv-item img{width:38px;height:38px;object-fit:cover;border-radius:6px}.inv-item .placeholder{font-size:25px;color:#777;width:38px;text-align:center}.inv-item .info{display:flex;flex-direction:column}.inv-item .name{font-size:13px;font-weight:700}.inv-item .meta{font-size:10px;color:#777}.empty-inv{color:#666;font-size:13px;padding:16px 0;width:100%;text-align:center}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);display:none;justify-content:center;align-items:center;z-index:999;padding:20px}.modal-overlay.open{display:flex}.modal{background:#111;border:1px solid #333;border-radius:14px;max-width:420px;width:100%;padding:28px;box-shadow:0 20px 60px #000}.modal-close{position:absolute;top:16px;right:20px;background:none;border:0;color:#777;font-size:22px;cursor:pointer}.modal{position:relative}.modal h2{text-align:center;font-size:21px}.modal .tg-tag{display:block;text-align:center;color:#888;font-size:13px;margin:4px auto 18px}.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.stat-item{background:#171717;border:1px solid #292929;border-radius:9px;padding:14px;text-align:center}.stat-item .num{font-size:22px;font-weight:900}.stat-item .label{font-size:10px;color:#777;margin-top:3px}.action-btn{background:#fff;border:0;color:#000;padding:12px;border-radius:9px;font-weight:800;font-size:14px;width:100%;cursor:pointer;margin-top:12px}.action-btn.secondary{background:#222;color:#fff;border:1px solid #333}
+.promo-row{display:flex;gap:7px;margin-top:12px}.promo-row input{flex:1;min-width:0;background:#0b0b0b;border:1px solid #333;color:#fff;border-radius:8px;padding:10px 11px;outline:none}.promo-row button{background:#fff;color:#000;border:0;border-radius:8px;padding:0 14px;font-weight:800;cursor:pointer}.promo-message{font-size:11px;color:#888;min-height:15px;margin-top:6px;text-align:center}
+@keyframes dropIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+@media(max-width:850px){.layout{grid-template-columns:1fr}.drops-panel{position:static}.drops-list{max-height:230px}.top-row{align-items:flex-start;flex-direction:column}.profile-trigger{align-self:stretch}}
+@media(max-width:480px){.item{flex-basis:120px;height:130px}.roller-wrap{height:165px}.spin{width:100%}.panel{padding:12px}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="top-row">
+    <div class="brand">
+      <h1>CASE SPINNER</h1>
+      <div class="sub">Кейсы • инвентарь • последние дропы</div>
+    </div>
+    <div class="profile-trigger" id="profileTrigger">
+      <div class="avatar" id="avatarLetter">C</div>
+      <div class="info">
+        <span class="name">Игрок</span>
+        <span class="balance-badge"><b id="balanceDisplay">100</b> DEMO</span>
+        <span style="font-size:12px;color:#8e7baa;">@case_spinner_demo</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout"><aside class="drops-panel"><div class="drops-title">Последние дропы</div><div class="drops-list" id="dropsList"></div></aside><main><div class="cases">
+    <button class="case-btn active" data-case="secret">🔮 SECRET <span class="badge">10 DEMO</span></button>
+    <button class="case-btn" data-case="common">📦 COMMON <span class="badge">5 DEMO</span></button>
+  </div>
+
+  <div class="panel">
+    <div class="roller-wrap" id="rollerWrap">
+      <div class="marker"></div>
+      <div class="track" id="track"></div>
+    </div>
+
+    <div class="chance" id="chanceContainer"></div>
+    <div class="result" id="resultText">Выбери кейс и крути</div>
+
+    <div class="controls">
+      <button class="spin" id="spinBtn">⚡ КРУТИТЬ</button>
+    </div>
+
+    <div class="info-bar">
+      <span class="demo-cost">🎯 <span id="caseCostLabel">10</span> DEMO</span>
+      <span>🏆 <span id="winCountLabel">0</span> выигрышей</span>
+      <span>📊 <span id="totalSpinsLabel">0</span> открытий</span>
+    </div>
+  </div>
+
+  <div class="inventory-section">
+    <div class="inventory-header">
+      <h3>🎒 Инвентарь <span style="font-size:14px; font-weight:400; color:#889bc2;" id="invCount">(0)</span></h3>
+      <button style="background:#1b253f; border:1px solid #2f4065; color:#b7c6e0; padding:6px 18px; border-radius:40px; cursor:pointer; font-size:13px;" id="clearInvBtn">Очистить</button>
+    </div>
+    <div class="inventory-grid" id="inventoryGrid">
+      <div class="empty-inv">Пока пусто... Откройте кейс!</div>
+    </div>
+  </div></main></div>
+
+<div class="modal-overlay" id="profileModal">
+  <div class="modal">
+    <button class="modal-close" id="modalCloseBtn">✕</button>
+    <div class="modal-avatar" id="modalAvatarLetter">C</div>
+    <h2>Профиль</h2>
+    <div class="tg-tag" id="modalUsername">@case_spinner_demo</div>
+
+    <div class="stat-grid">
+      <div class="stat-item">
+        <div class="num" id="modalBalance">100</div>
+        <div class="label">🪙 DEMO</div>
+      </div>
+      <div class="stat-item">
+        <div class="num" id="modalWins">0</div>
+        <div class="label">🏆 Выигрыши</div>
+      </div>
+      <div class="stat-item">
+        <div class="num" id="modalSpins">0</div>
+        <div class="label">🎰 Открытий</div>
+      </div>
+      <div class="stat-item">
+        <div class="num" id="modalInvCount">0</div>
+        <div class="label">🎒 Предметов</div>
+      </div>
+    </div>
+
+    <div class="promo-row"><input id="promoInput" maxlength="32" placeholder="Промокод"><button id="promoBtn">Активировать</button></div><div class="promo-message" id="promoMessage"></div>
+    <button class="action-btn secondary" id="modalCloseBtn2">Закрыть</button>
+  </div>
+</div>
+
+<script>
+const IMG_DOMINUS='https://github.com/saintezz/DropKeyboard/blob/main/c8e14aec-b504-4d87-915a-dee1c2e706b0.jpg?raw=true';
+const caseData={secret:{title:'Secret Case',cost:10,items:[{name:'Golden Mask',chance:67,img:null,emoji:'X'},{name:'Candy Dominus',chance:23,img:IMG_DOMINUS,emoji:null},{name:'Canada',chance:10,img:null,emoji:'X'}]},common:{title:'Common Case',cost:5,items:[{name:'Candy Crown',chance:90,img:null,emoji:'X'},{name:'Shell Crown',chance:10,img:null,emoji:'X'}]}};
+let currentCase='secret',balance=100,spinning=false,winCount=0,totalSpins=0,inventory=[];
+let tgUsername=localStorage.getItem('tg_username')||'case_spinner_demo';
+let clientId=localStorage.getItem('case_spinner_id'); if(!clientId){clientId=crypto.randomUUID();localStorage.setItem('case_spinner_id',clientId)}
+const $=id=>document.getElementById(id); const track=$('track'),rollerWrap=$('rollerWrap'),resultText=$('resultText'),balanceDisplay=$('balanceDisplay'),chanceContainer=$('chanceContainer'),caseCostLabel=$('caseCostLabel'),winCountLabel=$('winCountLabel'),totalSpinsLabel=$('totalSpinsLabel'),spinBtn=$('spinBtn'),inventoryGrid=$('inventoryGrid'),invCount=$('invCount'),modalOverlay=$('profileModal'),modalBalance=$('modalBalance'),modalWins=$('modalWins'),modalSpins=$('modalSpins'),modalInvCount=$('modalInvCount'),dropsList=$('dropsList');
+function applyUser(u){balance=u.balance;winCount=u.wins;totalSpins=u.spins;inventory=u.inventory||[];tgUsername=u.username||tgUsername;const letter=(tgUsername.replace(/^@/,'')[0]||'C').toUpperCase();$('avatarLetter').textContent=letter;$('modalAvatarLetter').textContent=letter;$('modalUsername').textContent='@'+tgUsername;updateStats();renderInventory()}
+function updateStats(){balanceDisplay.textContent=balance;winCountLabel.textContent=winCount;totalSpinsLabel.textContent=totalSpins;modalBalance.textContent=balance;modalWins.textContent=winCount;modalSpins.textContent=totalSpins;modalInvCount.textContent=inventory.length;invCount.textContent=`(${inventory.length})`}
+function buildCard(item){const hasImg=!!item.img;return `<div class="item">${hasImg?`<img src="${item.img}" alt="${item.name}">`:''}<div class="placeholder" style="${hasImg?'display:none':'display:block'}">${item.emoji||'X'}</div><b>${item.name}</b><div class="rarity">${item.chance}%</div></div>`}
+function buildInventoryItem(item){const hasImg=!!item.img;return `<div class="inv-item">${hasImg?`<img src="${item.img}" alt="${item.name}">`:''}<div class="placeholder" style="${hasImg?'display:none':'display:block'}">${item.emoji||'X'}</div><div class="info"><span class="name">${item.name}</span><span class="meta">шанс ${item.chance}%</span></div></div>`}
+function renderInventory(){inventoryGrid.innerHTML=inventory.length?inventory.map(buildInventoryItem).join(''):'<div class="empty-inv">Пока пусто</div>'}
+function render(){const d=caseData[currentCase];caseCostLabel.textContent=d.cost;chanceContainer.innerHTML=d.items.map(x=>`<span>${x.name}: ${x.chance}%</span>`).join('');const arr=Array.from({length:45},(_,i)=>d.items[i%d.items.length]);track.innerHTML=arr.map(buildCard).join('');track.style.transition='none';track.style.transform='translateX(0)';resultText.textContent=`Стоимость: ${d.cost} DEMO`;updateStats()}
+function addDropUI(drop,prepend=true){const e=document.createElement('div');e.className='drop';const name=drop.username||'user';e.innerHTML=`<div class="drop-avatar">${(name[0]||'U').toUpperCase()}</div><div class="drop-info"><div class="drop-user">@${name}</div><div class="drop-item">${drop.item.name}</div><div class="drop-time">только что</div></div>`;if(prepend)dropsList.prepend(e);else dropsList.appendChild(e);while(dropsList.children.length>30)dropsList.lastElementChild.remove()}
+async function loadState(){try{const r=await fetch(`/api/state?id=${encodeURIComponent(clientId)}&username=${encodeURIComponent(tgUsername)}`);const d=await r.json();applyUser(d.user);dropsList.innerHTML='';(d.drops||[]).slice(0,30).reverse().forEach(x=>addDropUI(x,false))}catch(e){resultText.textContent='Сервер недоступен'}}
+function connectWS(){try{const ws=new WebSocket(`${location.protocol==='https:'?'wss':'ws'}://${location.host}`);ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.type==='drop')addDropUI(m.drop,true);if(m.type==='drops'){dropsList.innerHTML='';m.drops.slice(0,30).reverse().forEach(x=>addDropUI(x,false))}};ws.onclose=()=>setTimeout(connectWS,2000)}catch(e){}}
+async function spin(){
+    if(spinning)return;
+    const d=caseData[currentCase];
+    if(balance<d.cost){resultText.textContent='Недостаточно DEMO';return}
+    spinning=true;spinBtn.disabled=true;resultText.textContent='Крутим...';
+    
+    // Сначала делаем запрос к серверу
+    let winner, userData;
+    try {
+        const r=await fetch('/api/spin',{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({id:clientId,username:tgUsername,caseName:currentCase})
+        });
+        const data=await r.json();
+        if(!r.ok){resultText.textContent=data.error||'Ошибка';spinning=false;spinBtn.disabled=false;return}
+        winner=data.winner;
+        userData=data.user;
+    } catch(e) {
+        resultText.textContent='Ошибка сервера';
+        spinning=false;spinBtn.disabled=false;
+        return;
+    }
+
+    // --- ИСПРАВЛЕННАЯ ЛОГИКА ПРОКРУТКИ ---
+    // Принудительно сбрасываем позицию и переходы
+    track.style.transition = 'none';
+    track.style.transform = 'translateX(0)';
+    // Принудительный reflow
+    void track.offsetHeight;
+    
+    // Выбираем индекс цели (фиксированный 32)
+    const targetIndex = 32;
+    const itemWidth = 150;
+    const gap = 12;
+    const containerWidth = rollerWrap.clientWidth || 600;
+    const center = containerWidth / 2;
+    
+    // Вычисляем позицию центра целевого элемента
+    const itemCenter = (itemWidth + gap) * targetIndex + itemWidth / 2 + 12;
+    const offset = center - itemCenter;
+    // Небольшой случайный сдвиг для разнообразия (±15px)
+    const randomOffset = (Math.random() - 0.5) * 30;
+    const finalX = offset + randomOffset;
+
+    // Заменяем карточку на победителя
+    const cards = [...track.children];
+    if (cards[targetIndex]) {
+        cards[targetIndex].outerHTML = buildCard(winner);
+    }
+
+    // Запускаем анимацию с задержкой 50ms для гарантированного применения
+    setTimeout(() => {
+        track.style.transition = 'transform 4.8s cubic-bezier(0.08, 0.72, 0.12, 1)';
+        track.style.transform = `translateX(${finalX}px)`;
+    }, 50);
+
+    // Обновляем состояние после завершения анимации
+    setTimeout(() => {
+        if (userData) applyUser(userData);
+        resultText.textContent = `🎉 ${winner.name} — ${winner.chance}%`;
+        spinning = false;
+        spinBtn.disabled = false;
+    }, 4900);
+}
+async function redeemPromo(){const input=$('promoInput'),msg=$('promoMessage'),code=input.value.trim();if(!code){msg.textContent='Введите промокод';return}const r=await fetch('/api/promo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:clientId,username:tgUsername,code})});const d=await r.json();msg.textContent=d.message||d.error||'Ошибка';if(r.ok){applyUser(d.user);input.value=''}}
+function openModal(){updateStats();modalOverlay.classList.add('open')}function closeModal(){modalOverlay.classList.remove('open')}
+document.querySelectorAll('.case-btn').forEach(btn=>btn.addEventListener('click',()=>{if(spinning)return;currentCase=btn.dataset.case;document.querySelectorAll('.case-btn').forEach(b=>b.classList.toggle('active',b===btn));render()}));
+spinBtn.addEventListener('click',spin);$('profileTrigger').addEventListener('click',openModal);$('modalCloseBtn').addEventListener('click',closeModal);$('modalCloseBtn2').addEventListener('click',closeModal);$('promoBtn').addEventListener('click',redeemPromo);$('promoInput').addEventListener('keydown',e=>{if(e.key==='Enter')redeemPromo()});$('clearInvBtn').addEventListener('click',()=>{if(spinning)return;inventory=[];renderInventory();updateStats()});modalOverlay.addEventListener('click',e=>{if(e.target===modalOverlay)closeModal()});
+render();loadState();connectWS();
+</script>
+</body>
+</html>
