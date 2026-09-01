@@ -1,136 +1,156 @@
-import express from 'express';
-import { WebSocketServer } from 'ws';
-import cors from 'cors';
-import fs from 'fs';
-import { randomUUID } from 'crypto';
-import path from 'path';
-import { fileURLToPath } from 'url';
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Case Spinner</title>
+  <style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:Inter,system-ui,-apple-system,sans-serif}
+:root{--bg:#090909;--panel:#111;--panel2:#171717;--line:#303030;--muted:#888;--text:#f4f4f4;--white:#fff}
+body{min-height:100vh;background:var(--bg);color:var(--text);padding:22px 18px}
+.app{width:min(1260px,100%);margin:auto}
+.top-row{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:18px}
+.brand h1{font-size:30px;letter-spacing:-.8px;font-weight:800}.brand .sub{font-size:12px;color:#777;margin-top:5px}
+.profile-trigger{display:flex;align-items:center;gap:11px;background:#111;border:1px solid var(--line);padding:8px 16px 8px 9px;border-radius:12px;cursor:pointer;transition:.2s}.profile-trigger:hover{background:#181818;border-color:#555}
+.avatar,.modal-avatar{display:flex;align-items:center;justify-content:center;background:#fff;color:#000;border-radius:10px;font-weight:900}.avatar{width:42px;height:42px;font-size:19px}.modal-avatar{width:72px;height:72px;font-size:30px;margin:0 auto 14px}.profile-trigger .info{display:flex;flex-direction:column;line-height:1.3}.profile-trigger .name{font-size:14px;font-weight:700}.profile-trigger .balance-badge{font-size:12px;color:#999}.profile-trigger .balance-badge b{color:#fff}
+.layout{display:grid;grid-template-columns:210px minmax(0,1fr);gap:16px;align-items:start}.drops-panel{background:#111;border:1px solid var(--line);border-radius:12px;padding:14px;position:sticky;top:16px}.drops-title{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px}.drops-list{display:flex;flex-direction:column;gap:8px;max-height:610px;overflow:auto}.drop{display:flex;align-items:center;gap:9px;padding:9px;background:#171717;border:1px solid #252525;border-radius:9px;animation:dropIn .35s ease}.drop .drop-avatar{width:28px;height:28px;border-radius:7px;background:#fff;color:#000;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;flex:none}.drop .drop-info{min-width:0}.drop .drop-user{font-size:11px;color:#aaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.drop .drop-item{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.drop .drop-time{font-size:9px;color:#666;margin-top:2px}
+.cases{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}.case-btn{background:#111;border:1px solid var(--line);color:#aaa;padding:11px 22px;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;transition:.2s}.case-btn:hover{border-color:#666;color:#fff}.case-btn.active{background:#fff;color:#000;border-color:#fff}.case-btn .badge{margin-left:8px;background:#252525;color:#aaa;padding:2px 8px;border-radius:5px}.case-btn.active .badge{background:#000;color:#fff}
+.panel,.inventory-section{background:#111;border:1px solid var(--line);border-radius:12px;padding:18px}.roller-wrap{position:relative;overflow:hidden;border-radius:10px;background:#090909;border:1px solid #292929;height:190px}.roller-wrap:after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,#090909 0%,transparent 12%,transparent 88%,#090909 100%)}.marker{position:absolute;z-index:10;left:50%;top:0;bottom:0;width:2px;background:#fff;transform:translateX(-50%)}.marker:before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);border-left:9px solid transparent;border-right:9px solid transparent;border-top:12px solid #fff}.track{height:100%;display:flex;align-items:center;gap:12px;padding:0 12px;transform:translateX(0);will-change:transform;position:relative}.item{flex:0 0 150px;height:150px;border-radius:10px;border:1px solid #333;background:#151515;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:.2s;padding:6px;overflow:hidden}.item img{width:64px;height:64px;object-fit:cover;border-radius:7px;background:#0b0b0b;border:1px solid #333;margin-bottom:5px}.item .placeholder{font-size:38px;font-weight:900;color:#777;line-height:1}.item b{font-size:14px;color:#eee;text-align:center}.item .rarity{font-size:10px;background:#252525;padding:3px 10px;border-radius:5px;margin-top:5px;color:#aaa}
+.controls{display:flex;justify-content:center;margin-top:18px}.spin{background:#fff;color:#000;border:1px solid #fff;padding:14px 44px;border-radius:10px;font-size:16px;font-weight:900;cursor:pointer;transition:.15s}.spin:hover:not(:disabled){background:#ddd;transform:translateY(-1px)}.spin:disabled{opacity:.35;cursor:not-allowed}.result{text-align:center;min-height:30px;font-size:17px;font-weight:700;margin-top:16px;color:#ddd}.chance{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin:12px 0 5px}.chance span{background:#171717;padding:6px 11px;border-radius:6px;border:1px solid #292929;color:#aaa;font-size:11px}.info-bar{display:flex;justify-content:space-between;margin-top:15px;color:#777;font-size:12px;gap:8px;flex-wrap:wrap}.info-bar .demo-cost{background:#171717;padding:5px 11px;border-radius:6px;border:1px solid #292929}
+.inventory-section{margin-top:14px}.inventory-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.inventory-header h3{font-size:16px}.inventory-grid{display:flex;flex-wrap:wrap;gap:9px;min-height:65px}.inv-item{background:#171717;border:1px solid #2b2b2b;border-radius:9px;padding:8px 11px;display:flex;align-items:center;gap:9px}.inv-item:hover{border-color:#666}.inv-item img{width:38px;height:38px;object-fit:cover;border-radius:6px}.inv-item .placeholder{font-size:25px;color:#777;width:38px;text-align:center}.inv-item .info{display:flex;flex-direction:column}.inv-item .name{font-size:13px;font-weight:700}.inv-item .meta{font-size:10px;color:#777}.empty-inv{color:#666;font-size:13px;padding:16px 0;width:100%;text-align:center}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);display:none;justify-content:center;align-items:center;z-index:999;padding:20px}.modal-overlay.open{display:flex}.modal{background:#111;border:1px solid #333;border-radius:14px;max-width:420px;width:100%;padding:28px;box-shadow:0 20px 60px #000;position:relative}.modal-close{position:absolute;top:16px;right:20px;background:none;border:0;color:#777;font-size:22px;cursor:pointer}.modal h2{text-align:center;font-size:21px}.modal .tg-tag{display:block;text-align:center;color:#888;font-size:13px;margin:4px auto 18px}.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.stat-item{background:#171717;border:1px solid #292929;border-radius:9px;padding:14px;text-align:center}.stat-item .num{font-size:22px;font-weight:900}.stat-item .label{font-size:10px;color:#777;margin-top:3px}.action-btn{background:#fff;border:0;color:#000;padding:12px;border-radius:9px;font-weight:800;font-size:14px;width:100%;cursor:pointer;margin-top:12px}.action-btn.secondary{background:#222;color:#fff;border:1px solid #333}
+.promo-row{display:flex;gap:7px;margin-top:12px}.promo-row input{flex:1;min-width:0;background:#0b0b0b;border:1px solid #333;color:#fff;border-radius:8px;padding:10px 11px;outline:none}.promo-row button{background:#fff;color:#000;border:0;border-radius:8px;padding:0 14px;font-weight:800;cursor:pointer}.promo-message{font-size:11px;color:#888;min-height:15px;margin-top:6px;text-align:center}
+@keyframes dropIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+@media(max-width:850px){.layout{grid-template-columns:1fr}.drops-panel{position:static}.drops-list{max-height:230px}.top-row{align-items:flex-start;flex-direction:column}.profile-trigger{align-self:stretch}}
+@media(max-width:480px){.item{flex-basis:120px;height:130px}.roller-wrap{height:165px}.spin{width:100%}.panel{padding:12px}}
+  </style>
+</head>
+<body>
+<div class="app">
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+  <div class="top-row">
+    <div class="brand">
+      <h1>CASE SPINNER</h1>
+      <div class="sub">Кейсы • инвентарь • последние дропы</div>
+    </div>
+    <div class="profile-trigger" id="profileTrigger">
+      <div class="avatar" id="avatarLetter">C</div>
+      <div class="info">
+        <span class="name" id="profileName">Игрок</span>
+        <span class="balance-badge"><b id="balanceDisplay">100</b> DEMO</span>
+        <span style="font-size:12px;color:#8e7baa;" id="profileTag">@user</span>
+      </div>
+    </div>
+  </div>
 
-const app = express();
-const port = process.env.PORT || 3000;
+  <div class="layout">
+    <aside class="drops-panel">
+      <div class="drops-title">Последние дропы</div>
+      <div class="drops-list" id="dropsList">
+        <div style="color:#666;text-align:center;padding:20px 0;font-size:13px;">Загрузка...</div>
+      </div>
+    </aside>
+    <main>
+      <div class="cases">
+        <button class="case-btn active" data-case="secret">🔮 SECRET <span class="badge">10 DEMO</span></button>
+        <button class="case-btn" data-case="common">📦 COMMON <span class="badge">5 DEMO</span></button>
+      </div>
 
-// Настройка CORS
-app.use(cors({
-  origin: ['https://t.me', 'https://web.telegram.org', 'http://localhost:3000', 'https://escapedrop.onrender.com', 'https://*.onrender.com'],
-  credentials: true
-}));
-app.use(express.json());
+      <div class="panel">
+        <div class="roller-wrap" id="rollerWrap">
+          <div class="marker"></div>
+          <div class="track" id="track"></div>
+        </div>
 
-// Раздача статики из папки public
-app.use(express.static('public'));
+        <div class="chance" id="chanceContainer"></div>
+        <div class="result" id="resultText">Выбери кейс и крути</div>
 
-// ===== БАЗА ДАННЫХ =====
-const DB_FILE = path.join(__dirname, 'server.json');
+        <div class="controls">
+          <button class="spin" id="spinBtn">⚡ КРУТИТЬ</button>
+        </div>
 
-let db = {
-  users: {},
-  drops: [],
-  promo: {}
-};
+        <div class="info-bar">
+          <span class="demo-cost">🎯 <span id="caseCostLabel">10</span> DEMO</span>
+          <span>🏆 <span id="winCountLabel">0</span> выигрышей</span>
+          <span>📊 <span id="totalSpinsLabel">0</span> открытий</span>
+        </div>
+      </div>
 
-function loadDB() {
-  try {
-    if (fs.existsSync(DB_FILE)) {
-      const data = fs.readFileSync(DB_FILE, 'utf8');
-      db = JSON.parse(data);
-      console.log('✅ База данных загружена');
-    } else {
-      console.log('⚠️ Файл БД не найден, создан новый');
-      initDB();
+      <div class="inventory-section">
+        <div class="inventory-header">
+          <h3>🎒 Инвентарь <span style="font-size:14px; font-weight:400; color:#889bc2;" id="invCount">(0)</span></h3>
+          <button style="background:#1b253f; border:1px solid #2f4065; color:#b7c6e0; padding:6px 18px; border-radius:40px; cursor:pointer; font-size:13px;" id="clearInvBtn">Очистить</button>
+        </div>
+        <div class="inventory-grid" id="inventoryGrid">
+          <div class="empty-inv">Пока пусто... Откройте кейс!</div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="profileModal">
+    <div class="modal">
+      <button class="modal-close" id="modalCloseBtn">✕</button>
+      <div class="modal-avatar" id="modalAvatarLetter">C</div>
+      <h2 id="modalName">Профиль</h2>
+      <div class="tg-tag" id="modalUsername">@user</div>
+
+      <div class="stat-grid">
+        <div class="stat-item">
+          <div class="num" id="modalBalance">100</div>
+          <div class="label">🪙 DEMO</div>
+        </div>
+        <div class="stat-item">
+          <div class="num" id="modalWins">0</div>
+          <div class="label">🏆 Выигрыши</div>
+        </div>
+        <div class="stat-item">
+          <div class="num" id="modalSpins">0</div>
+          <div class="label">🎰 Открытий</div>
+        </div>
+        <div class="stat-item">
+          <div class="num" id="modalInvCount">0</div>
+          <div class="label">🎒 Предметов</div>
+        </div>
+      </div>
+
+      <div class="promo-row">
+        <input id="promoInput" maxlength="32" placeholder="Промокод">
+        <button id="promoBtn">Активировать</button>
+      </div>
+      <div class="promo-message" id="promoMessage"></div>
+      <button class="action-btn secondary" id="modalCloseBtn2">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== Telegram WebApp =====
+let tg = null;
+let tgUser = null;
+let tgId = null;
+
+try {
+  if (window.Telegram && window.Telegram.WebApp) {
+    tg = window.Telegram.WebApp;
+    tg.ready();
+    tgUser = tg.initDataUnsafe?.user;
+    if (tgUser) {
+      tgId = tgUser.id.toString();
+      localStorage.setItem('tg_username', tgUser.username || `user_${tgUser.id}`);
+      localStorage.setItem('tg_id', tgId);
+      console.log('✅ Telegram WebApp подключен:', tgUser.username || tgUser.first_name);
     }
-  } catch (e) {
-    console.error('❌ Ошибка загрузки БД:', e);
-    initDB();
   }
-  saveDB();
+} catch (e) {
+  console.log('ℹ️ Не Telegram окружение');
 }
 
-function initDB() {
-  db = {
-    users: {},
-    drops: [],
-    promo: {
-      'DEMO2025': { reward: 25, used: false },
-      'CASESPINNER': { reward: 50, used: false },
-      'HELLO': { reward: 15, used: false },
-      'TGSTART': { reward: 30, used: false },
-      'WELCOME': { reward: 20, used: false },
-      'ESCAPE': { reward: 35, used: false }
-    }
-  };
-}
-
-function saveDB() {
-  try {
-    fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
-  } catch (e) {
-    console.error('❌ Ошибка сохранения БД:', e);
-  }
-}
-
-loadDB();
-
-// ===== ВСПОМОГАТЕЛЬНЫЕ =====
-function getOrCreateUser(id, username) {
-  if (!id) {
-    id = randomUUID();
-  }
-  
-  if (!db.users[id]) {
-    const displayName = username || 'user_' + id.slice(0, 6);
-    db.users[id] = {
-      id: id,
-      username: displayName,
-      balance: 100,
-      wins: 0,
-      spins: 0,
-      inventory: [],
-      createdAt: Date.now()
-    };
-    saveDB();
-    console.log(`👤 Новый пользователь: ${displayName} (${id})`);
-  }
-  
-  if (username && db.users[id].username !== username) {
-    db.users[id].username = username;
-    saveDB();
-  }
-  
-  return db.users[id];
-}
-
-function addDrop(username, item) {
-  db.drops.unshift({
-    username: username,
-    item: item,
-    timestamp: Date.now()
-  });
-  if (db.drops.length > 200) {
-    db.drops.length = 200;
-  }
-  saveDB();
-}
-
-function getWeighted(items) {
-  const valid = items.filter(x => x.chance > 0);
-  if (valid.length === 0) return items[0];
-  
-  let r = Math.random() * 100;
-  for (const item of valid) {
-    if (r < item.chance) return item;
-    r -= item.chance;
-  }
-  return valid[valid.length - 1];
-}
-
-// ===== ДАННЫЕ КЕЙСОВ =====
 const IMG_DOMINUS = 'https://github.com/saintezz/DropKeyboard/blob/main/c8e14aec-b504-4d87-915a-dee1c2e706b0.jpg?raw=true';
 
-const CASE_DATA = {
+const caseData = {
   secret: {
+    title: 'Secret Case',
     cost: 10,
     items: [
       { name: 'Golden Mask', chance: 67, img: null, emoji: 'X' },
@@ -139,6 +159,7 @@ const CASE_DATA = {
     ]
   },
   common: {
+    title: 'Common Case',
     cost: 5,
     items: [
       { name: 'Candy Crown', chance: 90, img: null, emoji: 'X' },
@@ -147,210 +168,331 @@ const CASE_DATA = {
   }
 };
 
-// ===== REST API =====
-app.get('/api/state', (req, res) => {
-  try {
-    const id = req.query.id || randomUUID();
-    const username = req.query.username || 'user';
-    const user = getOrCreateUser(id, username);
-    const recent = db.drops.slice(0, 50);
-    
-    res.json({
-      user: {
-        id: user.id,
-        username: user.username,
-        balance: user.balance,
-        wins: user.wins,
-        spins: user.spins,
-        inventory: user.inventory
-      },
-      drops: recent
-    });
-  } catch (e) {
-    console.error('❌ Ошибка в /api/state:', e);
-    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
-  }
-});
+let currentCase = 'secret';
+let balance = 100;
+let spinning = false;
+let winCount = 0;
+let totalSpins = 0;
+let inventory = [];
+let username = localStorage.getItem('tg_username') || 'player';
+let userId = localStorage.getItem('tg_id') || crypto.randomUUID();
 
-app.post('/api/spin', (req, res) => {
-  try {
-    const { id, username, caseName } = req.body;
-    
-    if (!id) {
-      return res.status(400).json({ error: 'ID пользователя обязателен' });
-    }
-    
-    if (!caseName) {
-      return res.status(400).json({ error: 'Название кейса обязательно' });
-    }
+// DOM элементы
+const $ = id => document.getElementById(id);
+const track = $('track');
+const rollerWrap = $('rollerWrap');
+const resultText = $('resultText');
+const balanceDisplay = $('balanceDisplay');
+const chanceContainer = $('chanceContainer');
+const caseCostLabel = $('caseCostLabel');
+const winCountLabel = $('winCountLabel');
+const totalSpinsLabel = $('totalSpinsLabel');
+const spinBtn = $('spinBtn');
+const inventoryGrid = $('inventoryGrid');
+const invCount = $('invCount');
+const dropsList = $('dropsList');
+const modalOverlay = $('profileModal');
+const modalBalance = $('modalBalance');
+const modalWins = $('modalWins');
+const modalSpins = $('modalSpins');
+const modalInvCount = $('modalInvCount');
 
-    const user = getOrCreateUser(id, username);
-    const caseData = CASE_DATA[caseName];
-    
-    if (!caseData) {
-      return res.status(400).json({ error: 'Кейс не найден' });
-    }
-
-    if (user.balance < caseData.cost) {
-      return res.status(400).json({ error: 'Недостаточно DEMO' });
-    }
-
-    const winner = getWeighted(caseData.items);
-    
-    user.balance -= caseData.cost;
-    user.spins += 1;
-    user.wins += 1;
-    user.inventory.push({ 
-      ...winner, 
-      wonAt: Date.now() 
-    });
-
-    addDrop(user.username, winner);
-    saveDB();
-
-    res.json({
-      winner: winner,
-      user: {
-        id: user.id,
-        username: user.username,
-        balance: user.balance,
-        wins: user.wins,
-        spins: user.spins,
-        inventory: user.inventory
-      }
-    });
-    
-    console.log(`🎰 Спин: ${user.username} выиграл ${winner.name}`);
-    
-  } catch (e) {
-    console.error('❌ Ошибка в /api/spin:', e);
-    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
-  }
-});
-
-app.post('/api/promo', (req, res) => {
-  try {
-    const { id, username, code } = req.body;
-    
-    if (!id || !code) {
-      return res.status(400).json({ error: 'Неверный запрос' });
-    }
-
-    const user = getOrCreateUser(id, username);
-    const promo = db.promo[code.toUpperCase()];
-
-    if (!promo) {
-      return res.status(400).json({ error: 'Промокод не найден' });
-    }
-
-    if (promo.used) {
-      return res.status(400).json({ error: 'Промокод уже использован' });
-    }
-
-    promo.used = true;
-    user.balance += promo.reward || 25;
-    saveDB();
-
-    res.json({
-      message: `Промокод активирован! +${promo.reward || 25} DEMO`,
-      user: {
-        id: user.id,
-        username: user.username,
-        balance: user.balance,
-        wins: user.wins,
-        spins: user.spins,
-        inventory: user.inventory
-      }
-    });
-    
-    console.log(`🎁 Промокод ${code} активирован пользователем ${user.username}`);
-    
-  } catch (e) {
-    console.error('❌ Ошибка в /api/promo:', e);
-    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
-  }
-});
-
-// ===== WebSocket =====
-const server = app.listen(port, '0.0.0.0', () => {
-  console.log(`✅ Сервер запущен на порту ${port}`);
-});
-
-const wss = new WebSocketServer({ 
-  server,
-  path: '/ws'
-});
-
-const clients = new Set();
-
-wss.on('connection', (ws) => {
-  console.log('🔗 Новое WebSocket подключение');
-  clients.add(ws);
+// ===== ФУНКЦИИ =====
+function applyUser(u) {
+  balance = u.balance;
+  winCount = u.wins;
+  totalSpins = u.spins;
+  inventory = u.inventory || [];
+  username = u.username || username;
   
-  try {
-    ws.send(JSON.stringify({
-      type: 'drops',
-      drops: db.drops.slice(0, 30)
-    }));
-  } catch (e) {
-    console.error('❌ Ошибка отправки дропов:', e);
-  }
-
-  ws.on('message', (message) => {
-    try {
-      const data = JSON.parse(message);
-      if (data.type === 'ping') {
-        ws.send(JSON.stringify({ type: 'pong' }));
-      }
-    } catch (e) {}
-  });
-
-  ws.on('close', () => {
-    clients.delete(ws);
-    console.log('🔌 WebSocket отключён');
-  });
-});
-
-function broadcast(data) {
-  const message = JSON.stringify(data);
-  clients.forEach(client => {
-    if (client.readyState === 1) {
-      try {
-        client.send(message);
-      } catch (e) {}
-    }
-  });
+  const letter = (username.replace(/^@/, '')[0] || 'C').toUpperCase();
+  $('avatarLetter').textContent = letter;
+  $('modalAvatarLetter').textContent = letter;
+  $('profileName').textContent = username;
+  $('profileTag').textContent = '@' + username;
+  $('modalName').textContent = username;
+  $('modalUsername').textContent = '@' + username;
+  
+  updateStats();
+  renderInventory();
 }
 
-const originalAddDrop = addDrop;
-addDrop = function(username, item) {
-  originalAddDrop(username, item);
-  if (db.drops.length > 0) {
-    broadcast({
-      type: 'drop',
-      drop: db.drops[0]
-    });
+function updateStats() {
+  balanceDisplay.textContent = balance;
+  winCountLabel.textContent = winCount;
+  totalSpinsLabel.textContent = totalSpins;
+  modalBalance.textContent = balance;
+  modalWins.textContent = winCount;
+  modalSpins.textContent = totalSpins;
+  modalInvCount.textContent = inventory.length;
+  invCount.textContent = `(${inventory.length})`;
+}
+
+function buildCard(item) {
+  const hasImg = !!item.img;
+  return `<div class="item">${hasImg ? `<img src="${item.img}" alt="${item.name}">` : ''}<div class="placeholder" style="${hasImg ? 'display:none' : 'display:block'}">${item.emoji || 'X'}</div><b>${item.name}</b><div class="rarity">${item.chance}%</div></div>`;
+}
+
+function buildInventoryItem(item) {
+  const hasImg = !!item.img;
+  return `<div class="inv-item">${hasImg ? `<img src="${item.img}" alt="${item.name}">` : ''}<div class="placeholder" style="${hasImg ? 'display:none' : 'display:block'}">${item.emoji || 'X'}</div><div class="info"><span class="name">${item.name}</span><span class="meta">шанс ${item.chance}%</span></div></div>`;
+}
+
+function renderInventory() {
+  inventoryGrid.innerHTML = inventory.length ? inventory.map(buildInventoryItem).join('') : '<div class="empty-inv">Пока пусто</div>';
+}
+
+function render() {
+  const d = caseData[currentCase];
+  caseCostLabel.textContent = d.cost;
+  chanceContainer.innerHTML = d.items.map(x => `<span>${x.name}: ${x.chance}%</span>`).join('');
+  
+  const arr = Array.from({length: 45}, (_, i) => d.items[i % d.items.length]);
+  track.innerHTML = arr.map(buildCard).join('');
+  track.style.transition = 'none';
+  track.style.transform = 'translateX(0)';
+  resultText.textContent = `Стоимость: ${d.cost} DEMO`;
+  updateStats();
+}
+
+function addDropUI(drop, prepend = true) {
+  const e = document.createElement('div');
+  e.className = 'drop';
+  const name = drop.username || 'user';
+  const itemName = drop.item?.name || 'item';
+  e.innerHTML = `<div class="drop-avatar">${(name[0] || 'U').toUpperCase()}</div><div class="drop-info"><div class="drop-user">@${name}</div><div class="drop-item">${itemName}</div><div class="drop-time">только что</div></div>`;
+  if (prepend) dropsList.prepend(e);
+  else dropsList.appendChild(e);
+  while (dropsList.children.length > 30) dropsList.lastElementChild.remove();
+}
+
+// ===== ЗАГРУЗКА СОСТОЯНИЯ =====
+async function loadState() {
+  try {
+    const url = `/api/state?id=${encodeURIComponent(userId)}&username=${encodeURIComponent(username)}`;
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+    applyUser(data.user);
+    
+    dropsList.innerHTML = '';
+    if (data.drops && data.drops.length > 0) {
+      data.drops.slice(0, 30).reverse().forEach(x => addDropUI(x, false));
+    } else {
+      dropsList.innerHTML = '<div style="color:#666;text-align:center;padding:20px 0;font-size:13px;">Пока нет дропов</div>';
+    }
+  } catch (e) {
+    console.error('❌ Ошибка загрузки состояния:', e);
+    resultText.textContent = '⚠️ Сервер недоступен';
+    dropsList.innerHTML = '<div style="color:#666;text-align:center;padding:20px 0;font-size:13px;">⚠️ Сервер недоступен</div>';
   }
-};
+}
 
-// ===== Health check =====
-app.get('/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'ok',
-    users: Object.keys(db.users).length,
-    drops: db.drops.length
+// ===== WEBSOCKET =====
+let ws = null;
+
+function connectWS() {
+  try {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+    
+    ws.onopen = () => {
+      console.log('✅ WebSocket подключен');
+    };
+    
+    ws.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.type === 'drop') {
+          addDropUI(data.drop, true);
+        }
+        if (data.type === 'drops') {
+          dropsList.innerHTML = '';
+          if (data.drops && data.drops.length > 0) {
+            data.drops.slice(0, 30).reverse().forEach(x => addDropUI(x, false));
+          } else {
+            dropsList.innerHTML = '<div style="color:#666;text-align:center;padding:20px 0;font-size:13px;">Пока нет дропов</div>';
+          }
+        }
+      } catch (err) {
+        console.error('❌ Ошибка обработки WebSocket:', err);
+      }
+    };
+    
+    ws.onclose = () => {
+      console.log('🔌 WebSocket отключён, переподключение через 3 сек...');
+      setTimeout(connectWS, 3000);
+    };
+    
+    ws.onerror = (err) => {
+      console.error('❌ WebSocket ошибка:', err);
+    };
+  } catch (e) {
+    console.error('❌ Ошибка подключения WebSocket:', e);
+    setTimeout(connectWS, 5000);
+  }
+}
+
+// ===== СПИН =====
+async function spin() {
+  if (spinning) return;
+  const d = caseData[currentCase];
+  if (balance < d.cost) {
+    resultText.textContent = '❌ Недостаточно DEMO!';
+    return;
+  }
+  
+  spinning = true;
+  spinBtn.disabled = true;
+  resultText.textContent = '🌀 Крутим...';
+  
+  try {
+    const r = await fetch('/api/spin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: userId,
+        username: username,
+        caseName: currentCase
+      })
+    });
+    
+    if (!r.ok) {
+      const err = await r.json();
+      throw new Error(err.error || 'Ошибка сервера');
+    }
+    
+    const data = await r.json();
+    const winner = data.winner;
+    
+    // Обновляем состояние
+    applyUser(data.user);
+    
+    // Анимация прокрутки
+    const targetIndex = 32;
+    const itemWidth = 150;
+    const gap = 12;
+    const containerWidth = rollerWrap.clientWidth || 600;
+    const center = containerWidth / 2;
+    const itemCenter = (itemWidth + gap) * targetIndex + itemWidth / 2 + 12;
+    const offset = center - itemCenter;
+    const randomOffset = (Math.random() - 0.5) * 30;
+    const finalX = offset + randomOffset;
+    
+    // Обновляем карточку победителя
+    const cards = [...track.children];
+    if (cards[targetIndex]) {
+      cards[targetIndex].outerHTML = buildCard(winner);
+    }
+    
+    // Запускаем анимацию
+    track.style.transition = 'none';
+    track.style.transform = 'translateX(0)';
+    void track.offsetHeight;
+    
+    setTimeout(() => {
+      track.style.transition = 'transform 4.8s cubic-bezier(0.08, 0.72, 0.12, 1)';
+      track.style.transform = `translateX(${finalX}px)`;
+    }, 50);
+    
+    setTimeout(() => {
+      resultText.textContent = `🎉 ${winner.name} — ${winner.chance}%`;
+      spinning = false;
+      spinBtn.disabled = false;
+    }, 4900);
+    
+  } catch (e) {
+    console.error('❌ Ошибка спина:', e);
+    resultText.textContent = `❌ ${e.message || 'Ошибка сервера'}`;
+    spinning = false;
+    spinBtn.disabled = false;
+  }
+}
+
+// ===== ПРОМОКОД =====
+async function redeemPromo() {
+  const input = $('promoInput');
+  const msg = $('promoMessage');
+  const code = input.value.trim().toUpperCase();
+  
+  if (!code) {
+    msg.textContent = 'Введите промокод';
+    return;
+  }
+  
+  try {
+    const r = await fetch('/api/promo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: userId,
+        username: username,
+        code: code
+      })
+    });
+    
+    const data = await r.json();
+    if (!r.ok) {
+      msg.textContent = data.error || 'Ошибка';
+      return;
+    }
+    
+    msg.textContent = data.message;
+    applyUser(data.user);
+    input.value = '';
+  } catch (e) {
+    msg.textContent = 'Ошибка сервера';
+  }
+}
+
+// ===== МОДАЛКА =====
+function openModal() {
+  updateStats();
+  modalOverlay.classList.add('open');
+}
+
+function closeModal() {
+  modalOverlay.classList.remove('open');
+}
+
+// ===== СОБЫТИЯ =====
+document.querySelectorAll('.case-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (spinning) return;
+    currentCase = btn.dataset.case;
+    document.querySelectorAll('.case-btn').forEach(b => b.classList.toggle('active', b === btn));
+    render();
   });
 });
 
-app.get('/admin', (req, res) => {
-  res.json({
-    users: Object.keys(db.users).length,
-    drops: db.drops.length,
-    promo: db.promo,
-    clients: clients.size
-  });
+spinBtn.addEventListener('click', spin);
+$('profileTrigger').addEventListener('click', openModal);
+$('modalCloseBtn').addEventListener('click', closeModal);
+$('modalCloseBtn2').addEventListener('click', closeModal);
+$('promoBtn').addEventListener('click', redeemPromo);
+$('promoInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') redeemPromo();
 });
 
-setInterval(saveDB, 30000);
+$('clearInvBtn').addEventListener('click', async () => {
+  if (spinning) return;
+  inventory = [];
+  renderInventory();
+  updateStats();
+  resultText.textContent = '🗑️ Инвентарь очищен';
+});
 
-console.log('🚀 Сервер готов к работе!');
+modalOverlay.addEventListener('click', e => {
+  if (e.target === modalOverlay) closeModal();
+});
+
+// ===== ЗАПУСК =====
+render();
+loadState();
+connectWS();
+
+console.log('🚀 Case Spinner запущен!');
+console.log(`👤 Пользователь: ${username} (${userId})`);
+</script>
+</body>
+</html>
