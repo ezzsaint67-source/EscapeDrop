@@ -1,7 +1,7 @@
 {
-  "name": "case-spinner-server",
+  "name": "case-spinner",
   "version": "1.0.0",
-  "description": "Case Spinner with global drops, inventory and users",
+  "description": "Case Spinner with global drops",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
