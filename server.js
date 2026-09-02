@@ -322,6 +322,10 @@ app.get("/api/health", (req, res) => {
 // FRONTEND
 // =========================
 
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
+
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
